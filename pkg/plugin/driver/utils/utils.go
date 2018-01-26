@@ -21,14 +21,12 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/heptio/sonobuoy/pkg/plugin"
 	gouuid "github.com/satori/go.uuid"
 
 	v1 "k8s.io/api/core/v1"
-	kuberuntime "k8s.io/apimachinery/pkg/runtime"
-	"k8s.io/apimachinery/pkg/runtime/schema"
-	"k8s.io/apimachinery/pkg/runtime/serializer"
 )
 
 // GetSessionID generates a new session id.
@@ -93,44 +91,20 @@ func MakeErrorResult(resultType string, errdata map[string]interface{}, nodeName
 	}
 }
 
-type objectContainer struct {
-	v1.Container
-}
-
-func (o *objectContainer) DeepCopyObject() kuberuntime.Object {
-	return &objectContainer{*o.DeepCopy()}
-}
-
-func (o *objectContainer) GetObjectKind() schema.ObjectKind {
-	return schema.EmptyObjectKind
-}
-
-func ContainerToYAML(container *v1.Container) (string, error) {
-	mediaType := "application/yaml"
-	schemeGroupVersion := schema.GroupVersion{Group: "pod", Version: "v0"}
-	schema := kuberuntime.NewScheme()
-	schema.AddKnownTypes(schemeGroupVersion, &objectContainer{})
-	codecs := serializer.NewCodecFactory(schema)
-
-	info, ok := kuberuntime.SerializerInfoForMediaType(codecs.SupportedMediaTypes(), mediaType)
-	if !ok {
-		return "", fmt.Errorf("unsupported media type %q", mediaType)
-	}
-
-	oc := &objectContainer{*container}
-
-	encoder := codecs.EncoderForVersion(info.Serializer, v1.SchemeGroupVersion)
-	b, err := kuberuntime.Encode(encoder, oc)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
-}
-
 func ContainerToJSON(container *v1.Container) (string, error) {
 	bytes, err := json.Marshal(container)
 	if err != nil {
 		return "", err
 	}
 	return string(bytes), nil
+}
+
+// TemplateFuncs exports (currently singular) functions to be used inside the template
+var TemplateFuncs = map[string]interface{}{
+	"indent": func(i int, input string) string {
+		split := strings.Split(yaml, "\n")
+		ident := "\n" + strings.Repeat(" ", i)
+		// Don't indent the first line, it's already indented in the template
+		return strings.Join(split, ident)
+	},
 }
