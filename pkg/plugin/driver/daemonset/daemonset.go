@@ -24,6 +24,7 @@ import (
 	"github.com/heptio/sonobuoy/pkg/errlog"
 	"github.com/heptio/sonobuoy/pkg/plugin"
 	"github.com/heptio/sonobuoy/pkg/plugin/driver/utils"
+	"github.com/heptio/sonobuoy/pkg/plugin/manifest"
 	"github.com/pkg/errors"
 	v1 "k8s.io/api/core/v1"
 	v1beta1ext "k8s.io/api/extensions/v1beta1"
@@ -89,7 +90,7 @@ func (p *Plugin) GetResultType() string {
 func (p *Plugin) FillTemplate(hostname string) (*bytes.Buffer, error) {
 	var b bytes.Buffer
 	// TODO (EKF): Should be YAML once we figure that out
-	container, err := utils.ContainerToJSON(&p.Definition.Spec)
+	container, err := kuberuntime.Encode(manifest.Encoder, &p.Definition.Spec)
 	if err != nil {
 		return &bytes.Buffer{}, errors.Wrapf(err, "couldn't reserialize container for daemonset %q", p.Definition.Name)
 	}
@@ -99,7 +100,7 @@ func (p *Plugin) FillTemplate(hostname string) (*bytes.Buffer, error) {
 		ResultType:        p.Definition.ResultType,
 		SessionID:         p.SessionID,
 		Namespace:         p.Namespace,
-		ProducerContainer: container,
+		ProducerContainer: string(container),
 		MasterAddress:     getMasterAddress(hostname), // TODO(EKF)
 	}
 

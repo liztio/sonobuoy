@@ -102,7 +102,7 @@ func ContainerToJSON(container *v1.Container) (string, error) {
 // TemplateFuncs exports (currently singular) functions to be used inside the template
 var TemplateFuncs = map[string]interface{}{
 	"indent": func(i int, input string) string {
-		split := strings.Split(yaml, "\n")
+		split := strings.Split(input, "\n")
 		ident := "\n" + strings.Repeat(" ", i)
 		// Don't indent the first line, it's already indented in the template
 		return strings.Join(split, ident)

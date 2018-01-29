@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/heptio/sonobuoy/pkg/plugin"
+	"github.com/heptio/sonobuoy/pkg/plugin/manifest"
 
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/api/extensions/v1beta1"
@@ -16,8 +17,10 @@ func TestFillTemplate(t *testing.T) {
 	testDaemonSet := NewPlugin(plugin.Definition{
 		Name:       "test-plugin",
 		ResultType: "test-plugin-result",
-		Spec: corev1.Container{
-			Name: "producer-container",
+		Spec: manifest.Container{
+			Container: corev1.Container{
+				Name: "producer-container",
+			},
 		},
 	}, "test-namespace")
 
@@ -33,7 +36,7 @@ func TestFillTemplate(t *testing.T) {
 		t.Fatalf("Failed to decode template to daemonSet: %v", err)
 	}
 
-	expectedName := fmt.Sprintf("sonobuoy-test-plugin--daemon-set-%v", testDaemonSet.SessionID)
+	expectedName := fmt.Sprintf("sonobuoy-test-plugin-daemon-set-%v", testDaemonSet.SessionID)
 	if daemonSet.Name != expectedName {
 		t.Errorf("Expected daemonSet name %v, got %v", expectedName, daemonSet.Name)
 	}
